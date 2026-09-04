@@ -1,0 +1,86 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build
+target/
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Maven
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+
+# Gradle
+.gradle/
+build/
+gradle-app.setting
+.gradletasknamecache
+
+# Log files
+logs/
+*.log
+*.log.*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Application properties
+application-local.properties
+application-dev.properties
+application-prod.properties
+
+# Secrets
+src/main/resources/application-secret.yml
+secrets/
+.vault-token
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Database
+data/
+*.db
+*.sqlite
+
+# Cache
+.cache/
+*.cache
+
+# Node (if frontend is included)
+node_modules/
+dist/
+npm-debug.log
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Test coverage
+coverage/
+.coverage
+*.gcda
+*.gcno
+
+# SonarQube
+.sonarqube/
+
+# Temp files
+tmp/
+temp/

@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # MongoDB for patient twins and data storage
+  mongodb:
+    image: mongo:7.0
+    container_name: medisphere-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: medisphere123
+      MONGO_INITDB_DATABASE: medisphere
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - medisphere-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Apache Kafka for real-time vitals streaming
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: medisphere-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - medisphere-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: medisphere-kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9092:9092"
+    networks:
+      - medisphere-network
+    healthcheck:
+      test: kafka-broker-api-versions.sh --bootstrap-server localhost:9092
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MediSphere Backend
+  medisphere-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: medisphere-backend
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://admin:medisphere123@mongodb:27017/medisphere?authSource=admin
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      FHIR_SERVER_URL: http://host.docker.internal:8081/fhir
+      JWT_ISSUER_URI: http://medisphere-backend:8080
+      AUDIT_ENABLED: "true"
+    ports:
+      - "8080:8080"
+    networks:
+      - medisphere-network
+    healthcheck:
+      test: wget --quiet --tries=1 --spider http://localhost:8080/api/health || exit 1
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+networks:
+  medisphere-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  mongodb_config:

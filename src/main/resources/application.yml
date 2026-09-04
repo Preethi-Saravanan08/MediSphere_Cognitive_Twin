@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: medisphere-cognitive-twin
+  
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/medisphere
+      auto-index-creation: true
+  
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+    consumer:
+      bootstrap-servers: localhost:9092
+      group-id: medisphere-vitals-consumer
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: '*'
+  
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8080}
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+    session:
+      timeout: 30m
+
+logging:
+  level:
+    root: INFO
+    com.medisphere: DEBUG
+    org.springframework.security: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/medisphere.log
+
+# HIPAA Audit Configuration
+audit:
+  enabled: true
+  log-file: logs/hipaa-audit.log
+  retention-days: 2555
+
+# FHIR Configuration
+fhir:
+  server-url: ${FHIR_SERVER_URL:http://localhost:8081/fhir}
+  auth-enabled: true
+  timeout-ms: 30000
+
+# Feature Flags
+features:
+  fhir-integration: true
+  kafka-streaming: true
+  consent-management: true
+  rbac-enabled: true
