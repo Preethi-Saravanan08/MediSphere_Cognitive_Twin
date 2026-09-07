@@ -2,7 +2,7 @@
 
 ## Overview
 
-MediSphere is an AI-powered healthcare platform that creates digital health twins for patients and predicts future health risks using continuous learning models. This is the implementation of **Milestone 1 (Weeks 1-2)**, which focuses on:
+MediSphere is an AI-powered healthcare platform that creates digital health twins for patients and predicts future health risks using continuous learning models. This is the implementation of Milestone1
 
 - FHIR API integration with EHR systems
 - Digital health twin creation in MongoDB
@@ -74,7 +74,7 @@ git clone <repository-url>
 cd medisphere
 ```
 
-### 2. Using Docker Compose (Recommended)
+### 2. Using Docker Compose 
 
 Start all services with a single command:
 
