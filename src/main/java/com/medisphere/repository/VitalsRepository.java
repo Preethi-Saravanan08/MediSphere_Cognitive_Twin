@@ -11,29 +11,33 @@ import java.util.List;
 @Repository
 public interface VitalsRepository extends MongoRepository<Vitals, String> {
 
+    List<Vitals> findByPatientId(String patientId);
+
     List<Vitals> findByPatientIdOrderByTimestampDesc(String patientId);
 
-    List<Vitals> findByPatientIdAndTimestampBetweenOrderByTimestampDesc(
-            String patientId, LocalDateTime startTime, LocalDateTime endTime);
+    @Query("{ 'patientId': ?0, 'timestamp': { $gte: ?1, $lte: ?2 } }")
+    List<Vitals> findVitalsByPatientAndDateRange(String patientId, LocalDateTime from, LocalDateTime to);
 
-    @Query("{ 'patientId': ?0, 'timestamp': { $gte: ?1 } }")
-    List<Vitals> findRecentVitals(String patientId, LocalDateTime since);
+    List<Vitals> findBySourceDevice(String deviceId);
 
-    @Query("{ 'patientId': ?0, 'isValid': false }")
-    List<Vitals> findInvalidVitals(String patientId);
+    @Query("{ 'isValid': false }")
+    List<Vitals> findInvalidVitals();
 
-    @Query("{ 'patientId': ?0, 'syncStatus': 'PENDING' }")
-    List<Vitals> findPendingSyncVitals(String patientId);
+    @Query("{ 'syncStatus': 'PENDING' }")
+    List<Vitals> findPendingSyncVitals();
 
-    @Query("{ 'syncStatus': 'FAILED' }")
-    List<Vitals> findFailedSyncVitals();
+    @Query("{ 'dataQuality': 'POOR' }")
+    List<Vitals> findPoorQualityVitals();
 
-    @Query("{ 'sourceDevice': ?0, 'timestamp': { $gte: ?1 } }")
-    List<Vitals> findVitalsByDeviceSince(String sourceDevice, LocalDateTime since);
+    @Query("{ 'heartRate': { $gt: 140 } } | { 'heartRate': { $lt: 50 } }")
+    List<Vitals> findAnomalousHeartRates();
+
+    @Query("{ 'oxygenSaturation': { $lt: 90 } }")
+    List<Vitals> findLowOxygenSaturation();
+
+    List<Vitals> findByTimestampAfter(LocalDateTime timestamp);
 
     long countByPatientId(String patientId);
 
-    long countByPatientIdAndIsValidTrue(String patientId);
-
-    long countByPatientIdAndIsAnomalous(String patientId);
+    long countBySyncStatus(String syncStatus);
 }

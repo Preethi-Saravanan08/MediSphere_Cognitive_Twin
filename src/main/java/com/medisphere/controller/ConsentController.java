@@ -1,160 +1,109 @@
 package com.medisphere.controller;
 
-import com.medisphere.service.ConsentManagementService;
-import com.medisphere.service.HIPAAAuditService;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.medisphere.domain.Consent;
+import com.medisphere.service.ConsentService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Slf4j
+import java.util.List;
+import java.util.Optional;
+
 @RestController
-@RequestMapping("/v1/consent")
-@CrossOrigin(origins = "*", maxAge = 3600)
+@RequestMapping("/v1/consents")
+@Slf4j
 public class ConsentController {
 
-    private final ConsentManagementService consentManagementService;
-    private final HIPAAAuditService hipaaAuditService;
+    @Autowired
+    private ConsentService consentService;
 
-    public ConsentController(
-            ConsentManagementService consentManagementService,
-            HIPAAAuditService hipaaAuditService) {
-        this.consentManagementService = consentManagementService;
-        this.hipaaAuditService = hipaaAuditService;
+    @PostMapping
+    public ResponseEntity<Consent> createConsent(@RequestBody Consent consent) {
+        log.info("Creating consent for patient: {} with type: {}", consent.getPatientId(), consent.getConsentType());
+        Consent createdConsent = consentService.createConsent(consent);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdConsent);
     }
 
-    @PostMapping("/{patientId}/grant")
-    public ResponseEntity<?> grantConsent(
+    @GetMapping("/patient/{patientId}/type/{consentType}")
+    public ResponseEntity<Consent> getConsentByPatientAndType(
             @PathVariable String patientId,
-            @RequestBody ConsentRequest request) {
-        try {
-            boolean success = consentManagementService.grantConsent(patientId, request.getReason());
-            
-            if (success) {
-                hipaaAuditService.logConsentChange(patientId, true, request.getReason());
-                return ResponseEntity.ok(new ApiResponse(
-                        true,
-                        "Consent granted successfully",
-                        null
-                ));
-            } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ApiResponse(false, "Failed to grant consent", null));
-            }
-        } catch (Exception e) {
-            log.error("Error granting consent for patient: {}", patientId, e);
-            hipaaAuditService.logError("CONSENT_GRANT_ERROR", patientId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse(false, "Error granting consent", null));
-        }
+            @PathVariable String consentType) {
+        log.debug("Fetching consent for patient: {} with type: {}", patientId, consentType);
+        Optional<Consent> consent = consentService.getConsentByPatientAndType(patientId, consentType);
+        return consent.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/{patientId}/revoke")
-    public ResponseEntity<?> revokeConsent(
+    @GetMapping("/patient/{patientId}")
+    public ResponseEntity<List<Consent>> getConsentsByPatient(@PathVariable String patientId) {
+        log.debug("Fetching all consents for patient: {}", patientId);
+        List<Consent> consents = consentService.getConsentsByPatient(patientId);
+        return ResponseEntity.ok(consents);
+    }
+
+    @GetMapping("/list/active")
+    public ResponseEntity<List<Consent>> getActiveConsents() {
+        log.debug("Fetching active consents");
+        List<Consent> consents = consentService.getActiveConsents();
+        return ResponseEntity.ok(consents);
+    }
+
+    @GetMapping("/list/expired")
+    public ResponseEntity<List<Consent>> getExpiredConsents() {
+        log.debug("Fetching expired consents");
+        List<Consent> consents = consentService.getExpiredConsents();
+        return ResponseEntity.ok(consents);
+    }
+
+    @GetMapping("/check/active/{patientId}/{consentType}")
+    public ResponseEntity<Boolean> hasActiveConsent(
             @PathVariable String patientId,
-            @RequestBody ConsentRequest request) {
-        try {
-            boolean success = consentManagementService.revokeConsent(patientId, request.getReason());
-            
-            if (success) {
-                hipaaAuditService.logConsentChange(patientId, false, request.getReason());
-                return ResponseEntity.ok(new ApiResponse(
-                        true,
-                        "Consent revoked successfully",
-                        null
-                ));
-            } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ApiResponse(false, "Failed to revoke consent", null));
-            }
-        } catch (Exception e) {
-            log.error("Error revoking consent for patient: {}", patientId, e);
-            hipaaAuditService.logError("CONSENT_REVOKE_ERROR", patientId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse(false, "Error revoking consent", null));
-        }
+            @PathVariable String consentType) {
+        log.debug("Checking active consent for patient: {} with type: {}", patientId, consentType);
+        boolean hasConsent = consentService.hasActiveConsent(patientId, consentType);
+        return ResponseEntity.ok(hasConsent);
     }
 
-    @GetMapping("/{patientId}/status")
-    public ResponseEntity<?> getConsentStatus(@PathVariable String patientId) {
-        try {
-            ConsentManagementService.ConsentStatus status = consentManagementService.getConsentStatus(patientId);
-            
-            if (status == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ApiResponse(false, "Patient not found", null));
-            }
-            
-            hipaaAuditService.logAccess("CONSENT_STATUS_ACCESSED", patientId, "Retrieved consent status");
-            
-            return ResponseEntity.ok(new ApiResponse(
-                    true,
-                    "Consent status retrieved successfully",
-                    status
-            ));
-        } catch (Exception e) {
-            log.error("Error retrieving consent status for patient: {}", patientId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse(false, "Error retrieving consent status", null));
-        }
+    @PostMapping("/{consentId}/revoke")
+    public ResponseEntity<Void> revokeConsent(
+            @PathVariable String consentId,
+            @RequestParam String revokedBy) {
+        log.info("Revoking consent: {} by {}", consentId, revokedBy);
+        consentService.revokeConsent(consentId, revokedBy);
+        return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/{patientId}/verify")
-    public ResponseEntity<?> verifyConsent(@PathVariable String patientId) {
-        try {
-            boolean hasConsent = consentManagementService.hasValidConsent(patientId);
-            
-            hipaaAuditService.logAccess("CONSENT_VERIFIED", patientId, "Verified consent status");
-            
-            return ResponseEntity.ok(new ApiResponse(
-                    true,
-                    "Consent verification completed",
-                    hasConsent
-            ));
-        } catch (Exception e) {
-            log.error("Error verifying consent for patient: {}", patientId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse(false, "Error verifying consent", null));
-        }
+    @PostMapping("/{consentId}/verify")
+    public ResponseEntity<Void> verifyConsent(
+            @PathVariable String consentId,
+            @RequestParam String verifiedBy) {
+        log.info("Verifying consent: {} by {}", consentId, verifiedBy);
+        consentService.verifyConsent(consentId, verifiedBy);
+        return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/count/consented")
-    public ResponseEntity<?> getConsentedPatientCount() {
-        try {
-            long count = consentManagementService.getConsentedPatientCount();
-            
-            hipaaAuditService.logAccess("CONSENTED_COUNT_ACCESSED", "ALL", "Retrieved consented patient count");
-            
-            return ResponseEntity.ok(new ApiResponse(
-                    true,
-                    "Consented patient count retrieved",
-                    count
-            ));
-        } catch (Exception e) {
-            log.error("Error getting consented patient count", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse(false, "Error getting count", null));
-        }
+    @PostMapping("/{consentId}/hipaa-acknowledge")
+    public ResponseEntity<Void> acknowledgeHipaa(
+            @PathVariable String consentId,
+            @RequestParam String acknowledgedBy) {
+        log.info("HIPAA acknowledged for consent: {} by {}", consentId, acknowledgedBy);
+        consentService.acknowledgeHipaa(consentId, acknowledgedBy);
+        return ResponseEntity.ok().build();
     }
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ConsentRequest {
-        private String reason;
-        private String version;
-        private String signature;
+    @GetMapping("/stats/active-count")
+    public ResponseEntity<Long> countActiveConsents() {
+        log.debug("Counting active consents");
+        long count = consentService.countActiveConsents();
+        return ResponseEntity.ok(count);
     }
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ApiResponse {
-        private boolean success;
-        private String message;
-        private Object data;
+    @GetMapping("/stats/hipaa-acknowledged-count")
+    public ResponseEntity<Long> countHipaaAcknowledgedConsents() {
+        log.debug("Counting HIPAA acknowledged consents");
+        long count = consentService.countHipaaAcknowledgedConsents();
+        return ResponseEntity.ok(count);
     }
 }

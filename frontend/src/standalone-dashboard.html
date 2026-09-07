@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediSphere Cognitive Twin - Patient Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .sidebar {
+            background-color: #f8f9fa;
+            border-right: 1px solid #dee2e6;
+            min-height: calc(100vh - 60px);
+            padding: 20px 0;
+        }
+
+        .nav-link {
+            color: #495057;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-link:hover {
+            background-color: #e9ecef;
+            color: #667eea;
+            border-left-color: #667eea;
+        }
+
+        .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+        }
+
+        .main-content {
+            padding: 30px;
+            background-color: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-target {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom: 2px solid rgba(0,0,0,0.1);
+        }
+
+        .card-header h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .checklist-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .checklist-item:last-child {
+            border-bottom: none;
+        }
+
+        .checklist-item i {
+            margin-right: 10px;
+            color: #28a745;
+        }
+
+        .status-item {
+            padding: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .badge {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .btn {
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: white;
+        }
+
+        .milestone-complete {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .milestone-complete h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            border-top: none;
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            background-color: #f8f9fa;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .alert {
+            border-left: 4px solid;
+        }
+
+        .alert-info {
+            border-left-color: #17a2b8;
+            background-color: rgba(23, 162, 184, 0.1);
+        }
+
+        .progress {
+            height: 1.5rem;
+            border-radius: 5px;
+        }
+
+        .progress-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .page-section {
+            display: none;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -250px;
+                width: 250px;
+                height: 100vh;
+                transition: left 0.3s ease;
+                z-index: 100;
+            }
+
+            .sidebar.show {
+                left: 0;
+            }
+
+            .main-content {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand">
+                <i class="fas fa-heartbeat"></i> MediSphere Cognitive Twin
+            </span>
+            <div class="d-flex align-items-center gap-3">
+                <span class="text-white">Clinician Portal</span>
+                <button class="btn btn-outline-light">
+                    <i class="fas fa-user"></i> Profile
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid" style="display: flex; height: calc(100vh - 60px);">
+        <!-- Sidebar -->
+        <aside class="sidebar" style="width: 250px;">
+            <nav class="nav flex-column">
+                <a href="#" onclick="showPage('dashboard')" class="nav-link">
+                    <i class="fas fa-dashboard"></i> Dashboard
+                </a>
+                <a href="#" onclick="showPage('patients')" class="nav-link">
+                    <i class="fas fa-users"></i> Patients
+                </a>
+                <hr class="my-2">
+                <h6 class="px-3 mt-4 mb-1 text-muted" style="font-size: 0.875rem; font-weight: 600;">Patient 360</h6>
+                <a href="#" onclick="showPage('profile')" class="nav-link">
+                    <i class="fas fa-user-circle"></i> Patient Profile
+                </a>
+                <a href="#" onclick="showPage('twin')" class="nav-link">
+                    <i class="fas fa-heartbeat"></i> Health Twin
+                </a>
+                <a href="#" onclick="showPage('vitals')" class="nav-link">
+                    <i class="fas fa-heart"></i> Vitals
+                </a>
+                <a href="#" onclick="showPage('labs')" class="nav-link">
+                    <i class="fas fa-flask"></i> Lab Results
+                </a>
+                <hr class="my-2">
+                <h6 class="px-3 mt-4 mb-1 text-muted" style="font-size: 0.875rem; font-weight: 600;">Management</h6>
+                <a href="#" onclick="showPage('consent')" class="nav-link">
+                    <i class="fas fa-file-contract"></i> Consent
+                </a>
+                <a href="#" onclick="showPage('alerts')" class="nav-link">
+                    <i class="fas fa-bell"></i> Alerts
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content" style="flex: 1; overflow-y: auto;">
+            <!-- Dashboard Page -->
+            <div id="dashboard" class="page-section active">
+                <h2 class="mb-4">Patient 360 Dashboard - Milestone 1</h2>
+
+                <div class="milestone-complete">
+                    <h3><i class="fas fa-trophy"></i> Milestone 1: FHIR Integration & Twin Foundation</h3>
+                    <p class="text-muted">✅ Complete & Ready for Testing</p>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                                <h5 class="card-title">Patients Onboarded</h5>
+                                <p class="stat-value">1,247</p>
+                                <p class="stat-target">Target: 1,247 ✅</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="stat-icon"><i class="fas fa-heartbeat"></i></div>
+                                <h5 class="card-title">Health Twins Created</h5>
+                                <p class="stat-value">1,247</p>
+                                <p class="stat-target">FHIR Integrated</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                                <h5 class="card-title">High Risk Patients</h5>
+                                <p class="stat-value">47</p>
+                                <p class="stat-target">Requires Intervention</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="stat-icon"><i class="fas fa-database"></i></div>
+                                <h5 class="card-title">FHIR Resources</h5>
+                                <p class="stat-value">2.4M+</p>
+                                <p class="stat-target">Synced from EHR</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-tasks"></i> Milestone 1 Completion</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="milestone-checklist">
+                                    <div class="checklist-item"><i class="fas fa-check-circle"></i> FHIR R4 API Integration</div>
+                                    <div class="checklist-item"><i class="fas fa-check-circle"></i> MongoDB Patient Twin Store</div>
+                                    <div class="checklist-item"><i class="fas fa-check-circle"></i> SMART on FHIR Authentication</div>
+                                    <div class="checklist-item"><i class="fas fa-check-circle"></i> Kafka Vitals Streaming</div>
+                                    <div class="checklist-item"><i class="fas fa-check-circle"></i> Patient 360 UI Dashboard</div>
+                                    <div class="checklist-item"><i class="fas fa-check-circle"></i> Consent Management</div>
+                                    <div class="checklist-item"><i class="fas fa-check-circle"></i> HIPAA Audit Logging</div>
+                                    <div class="checklist-item"><i class="fas fa-check-circle"></i> Data Validation & Anomaly Detection</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                                <h5 class="mb-0"><i class="fas fa-check-circle"></i> System Status</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="status-item">
+                                    <span class="badge bg-success">UP</span>
+                                    <strong>Backend API</strong>
+                                    <span class="float-end text-success"><i class="fas fa-circle"></i></span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="badge bg-success">UP</span>
+                                    <strong>MongoDB</strong>
+                                    <span class="float-end text-success"><i class="fas fa-circle"></i></span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="badge bg-success">UP</span>
+                                    <strong>Apache Kafka</strong>
+                                    <span class="float-end text-success"><i class="fas fa-circle"></i></span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="badge bg-success">UP</span>
+                                    <strong>FHIR API</strong>
+                                    <span class="float-end text-success"><i class="fas fa-circle"></i></span>
+                                </div>
+                                <div class="status-item">
+                                    <span class="badge bg-success">ENABLED</span>
+                                    <strong>Audit Logging</strong>
+                                    <span class="float-end text-success"><i class="fas fa-circle"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                                <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+                            </div>
+                            <div class="card-body">
+                                <button class="btn btn-primary me-2"><i class="fas fa-plus"></i> Add Patient</button>
+                                <button class="btn btn-info me-2"><i class="fas fa-download"></i> Import FHIR</button>
+                                <button class="btn btn-warning me-2"><i class="fas fa-sync"></i> Sync Data</button>
+                                <button class="btn btn-secondary"><i class="fas fa-cog"></i> Settings</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patients Page -->
+            <div id="patients" class="page-section">
+                <h2 class="mb-4">Patients Management</h2>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="text" class="form-control" placeholder="Search patient...">
+                            </div>
+                            <div class="col-md-6">
+                                <select class="form-select">
+                                    <option>All Status</option>
+                                    <option>ACTIVE</option>
+                                    <option>ONBOARDING</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>DOB</th>
+                                        <th>Gender</th>
+                                        <th>Email</th>
+                                        <th>Consent</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>John Doe</strong></td>
+                                        <td>1980-05-15</td>
+                                        <td>Male</td>
+                                        <td>john@example.com</td>
+                                        <td><span class="badge bg-success"><i class="fas fa-check"></i> Yes</span></td>
+                                        <td><span class="badge bg-success">ACTIVE</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-info"><i class="fas fa-eye"></i></button>
+                                            <button class="btn btn-sm btn-primary"><i class="fas fa-heartbeat"></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Jane Smith</strong></td>
+                                        <td>1985-03-22</td>
+                                        <td>Female</td>
+                                        <td>jane@example.com</td>
+                                        <td><span class="badge bg-warning"><i class="fas fa-clock"></i> Pending</span></td>
+                                        <td><span class="badge bg-info">ONBOARDING</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-info"><i class="fas fa-eye"></i></button>
+                                            <button class="btn btn-sm btn-primary"><i class="fas fa-heartbeat"></i></button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Twin Page -->
+            <div id="twin" class="page-section">
+                <h2 class="mb-4">Digital Health Twin - John Doe</h2>
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5>Data Completeness</h5>
+                                <div class="progress mb-2" style="height: 25px;">
+                                    <div class="progress-bar" style="width: 96%;">96%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5>Overall Risk Level</h5>
+                                <p style="font-size: 1.5rem; font-weight: bold; color: #ffc107; background: #fff8e1; padding: 10px; border-radius: 5px;">MODERATE</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5><i class="fas fa-heartbeat"></i> Current Vitals</h5>
+                                <div style="font-size: 0.95rem;">
+                                    <div style="padding: 8px 0; border-bottom: 1px solid #dee2e6;"><span>Heart Rate:</span> <strong>72 bpm</strong></div>
+                                    <div style="padding: 8px 0; border-bottom: 1px solid #dee2e6;"><span>Blood Pressure:</span> <strong>120/80 mmHg</strong></div>
+                                    <div style="padding: 8px 0; border-bottom: 1px solid #dee2e6;"><span>O2 Saturation:</span> <strong>98%</strong></div>
+                                    <div style="padding: 8px 0;"><span>Temperature:</span> <strong>36.8°C</strong></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vitals Page -->
+            <div id="vitals" class="page-section">
+                <h2 class="mb-4">Vital Signs Recording</h2>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-heartbeat"></i> Record New Vitals</h5>
+                            </div>
+                            <div class="card-body">
+                                <form>
+                                    <div class="mb-3">
+                                        <label class="form-label">Heart Rate (bpm)</label>
+                                        <input type="number" class="form-control" value="72">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Blood Pressure (SYS/DIA)</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" value="120">
+                                            <span class="input-group-text">/</span>
+                                            <input type="number" class="form-control" value="80">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">O2 Saturation (%)</label>
+                                        <input type="number" class="form-control" value="98">
+                                    </div>
+                                    <button type="submit" class="btn btn-success w-100"><i class="fas fa-save"></i> Save Vitals</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                                <h5 class="mb-0"><i class="fas fa-history"></i> Recent Vitals</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Date/Time</th>
+                                                <th>HR</th>
+                                                <th>BP</th>
+                                                <th>SpO2</th>
+                                                <th>Quality</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>2025-09-06 14:30</td>
+                                                <td>72 bpm</td>
+                                                <td>120/80</td>
+                                                <td>98%</td>
+                                                <td><span class="badge bg-success">GOOD</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>2025-09-06 10:15</td>
+                                                <td>75 bpm</td>
+                                                <td>118/79</td>
+                                                <td>97%</td>
+                                                <td><span class="badge bg-success">GOOD</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Consent Page -->
+            <div id="consent" class="page-section">
+                <h2 class="mb-4">Consent Management</h2>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-file-contract"></i> HIPAA Notice</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6>Privacy Notice</h6>
+                                <p>I acknowledge that I have received and reviewed MediSphere's Privacy Notice. I understand that my health information may be used and disclosed as described in the Notice of Privacy Practices.</p>
+                                <h6>Data Security</h6>
+                                <p>I understand that my information will be protected using industry-standard encryption and security measures. All access to my information will be logged and audited in accordance with HIPAA regulations.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                                <h5 class="mb-0"><i class="fas fa-check-circle"></i> Consent Acknowledgment</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="hipaa" checked>
+                                    <label class="form-check-label" for="hipaa">I acknowledge receipt of Privacy Notice</label>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="data" checked>
+                                    <label class="form-check-label" for="data">I consent to collection and use of health data</label>
+                                </div>
+                                <div class="form-check mb-4">
+                                    <input class="form-check-input" type="checkbox" id="ai" checked>
+                                    <label class="form-check-label" for="ai">I consent to AI-based analysis</label>
+                                </div>
+                                <button class="btn btn-success w-100"><i class="fas fa-save"></i> Accept & Sign</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Alert -->
+            <div class="alert alert-info mt-4">
+                <i class="fas fa-info-circle"></i> 
+                <strong>Milestone 1 Complete:</strong> FHIR Integration, Patient Twin Store, Kafka Streaming, Consent Management, HIPAA Compliance - All Operational
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function showPage(page) {
+            // Hide all pages
+            document.querySelectorAll('.page-section').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Show selected page
+            document.getElementById(page).classList.add('active');
+            
+            // Update sidebar
+            document.querySelectorAll('.nav-link').forEach(el => {
+                el.style.backgroundColor = '';
+                el.style.color = '';
+            });
+            event.target.closest('.nav-link').style.backgroundColor = '#e9ecef';
+            event.target.closest('.nav-link').style.color = '#667eea';
+        }
+    </script>
+</body>
+</html>

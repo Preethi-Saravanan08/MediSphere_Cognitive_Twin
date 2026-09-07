@@ -5,6 +5,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,20 +16,25 @@ public interface PatientRepository extends MongoRepository<Patient, String> {
 
     Optional<Patient> findByFhirResourceId(String fhirResourceId);
 
-    List<Patient> findByStatus(Patient.PatientStatus status);
+    List<Patient> findByActive(boolean active);
 
-    List<Patient> findByActiveTrue();
+    List<Patient> findByStatus(Patient.PatientStatus status);
 
     List<Patient> findByConsentProvidedTrue();
 
-    List<Patient> findByEhrSystemId(String ehrSystemId);
+    List<Patient> findByHipaaAcknowledgedTrue();
 
     @Query("{ 'fhirLastSynced': { $lt: ?0 } }")
-    List<Patient> findPatientsNotSyncedSince(java.time.LocalDateTime dateTime);
+    List<Patient> findPatientsNotSyncedSince(LocalDateTime dateTime);
+
+    @Query("{ 'ehrSystemId': ?0 }")
+    List<Patient> findByEhrSystemId(String ehrSystemId);
+
+    List<Patient> findByCreatedAtAfter(LocalDateTime createdAt);
+
+    long countByActive(boolean active);
 
     long countByStatus(Patient.PatientStatus status);
-
-    long countByActiveTrue();
 
     long countByConsentProvidedTrue();
 }

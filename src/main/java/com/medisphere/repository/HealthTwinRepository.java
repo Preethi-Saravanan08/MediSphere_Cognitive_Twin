@@ -16,19 +16,24 @@ public interface HealthTwinRepository extends MongoRepository<HealthTwin, String
 
     Optional<HealthTwin> findByTwinId(String twinId);
 
-    @Query("{ 'completeness': { $gte: ?0 } }")
-    List<HealthTwin> findByCompletenessGreaterThanOrEqual(double completeness);
+    @Query("{ 'twinDataCompleteness': { $gte: ?0 } }")
+    List<HealthTwin> findTwinsByMinimumCompleteness(int completeness);
 
-    @Query("{ 'validatedForPrediction': true }")
-    List<HealthTwin> findValidatedForPrediction();
+    @Query("{ 'overallRiskLevel': ?0 }")
+    List<HealthTwin> findByOverallRiskLevel(String riskLevel);
 
-    @Query("{ 'lastUpdate': { $lt: ?0 } }")
-    List<HealthTwin> findByLastUpdateBefore(LocalDateTime dateTime);
+    @Query("{ 'overallRiskLevel': { $in: ['HIGH', 'CRITICAL'] } }")
+    List<HealthTwin> findHighRiskPatients();
 
-    @Query("{ 'lastUpdate': { $gte: ?0, $lt: ?1 } }")
-    List<HealthTwin> findByLastUpdateBetween(LocalDateTime startDate, LocalDateTime endDate);
+    List<HealthTwin> findByLastUpdatedAfter(LocalDateTime lastUpdated);
 
-    long countByValidatedForPrediction(boolean validated);
+    List<HealthTwin> findByLastVitalUpdateBefore(LocalDateTime threshold);
 
-    long countByCompletenessGreaterThanOrEqual(double completeness);
+    @Query("{ 'hipaaCompliant': true }")
+    List<HealthTwin> findHipaaCompliantTwins();
+
+    @Query("{ 'activeAlerts': { $ne: [] } }")
+    List<HealthTwin> findTwinsWithActiveAlerts();
+
+    long countByOverallRiskLevel(String riskLevel);
 }

@@ -19,50 +19,45 @@ public class LabResult {
     @Id
     private String id;
 
+    private String labResultId;
     private String patientId;
     private String testName;
-    private String testCode; // LOINC code
+    private String testCode;
+
+    // Result Values
     private String value;
     private String unit;
-    private float numericValue;
-
-    // Reference Ranges
-    private float referenceMin;
-    private float referenceMax;
     private String referenceRange;
+    private String normalRange;
 
-    // Interpretation
-    private String interpretation; // NORMAL, LOW, HIGH, CRITICAL
-    private boolean abnormal;
-    private String clinicalNotes;
+    // Result Status
+    private String status; // FINAL, PRELIMINARY, AMENDED, CANCELLED
+    private String interpretation; // NORMAL, ABNORMAL, CRITICAL
 
-    // Metadata
-    private LocalDateTime testDate;
-    private LocalDateTime resultsDate;
+    // Test Details
+    private String specimentType;
     private String laboratory;
-    private String laboratorian;
+    private String provider;
+
+    // Dates
+    private LocalDateTime collectedAt;
+    private LocalDateTime analyzedAt;
+    private LocalDateTime resultedAt;
 
     // FHIR Integration
     private String fhirObservationId;
-    private String fhirBundleId;
+    private LocalDateTime fhirSyncedAt;
 
     // Audit
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private boolean validated;
+    private String createdBy;
 
     public boolean isAbnormal() {
-        if (numericValue == 0) return false;
-        return numericValue < referenceMin || numericValue > referenceMax;
+        return "ABNORMAL".equals(interpretation) || "CRITICAL".equals(interpretation);
     }
 
     public boolean isCritical() {
         return "CRITICAL".equals(interpretation);
-    }
-
-    public String getStatus() {
-        if (!isAbnormal()) return "NORMAL";
-        if (isCritical()) return "CRITICAL";
-        return interpretation;
     }
 }

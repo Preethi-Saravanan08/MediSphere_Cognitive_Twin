@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -20,69 +21,121 @@ public class HealthTwin {
     @Id
     private String id;
 
-    private String patientId;
     private String twinId;
+    private String patientId;
     private String modelVersion;
 
-    // Twin Status
-    private double completeness; // Percentage 0-100
-    private LocalDateTime lastUpdate;
-    private LocalDateTime createdAt;
+    // Patient Core Data
+    private String firstName;
+    private String lastName;
+    private String dateOfBirth;
+    private String gender;
 
-    // Latest Vitals (snapshot)
-    private Vitals latestVitals;
-
-    // Latest Lab Results (snapshot)
+    // Health Metrics
+    private CurrentVitals currentVitals;
     private List<LabResult> recentLabResults;
+    private List<String> activeConditions;
+    private List<String> currentMedications;
+    private List<String> allergies;
 
-    // Risk Heatmap Data
-    private RiskHeatmap riskHeatmap;
+    // Risk Indicators
+    private Map<String, Float> riskScores; // e.g., "cardiovascular": 0.24, "diabetes": 0.18
+    private String overallRiskLevel; // LOW, MODERATE, HIGH, CRITICAL
 
-    // 3D Body Model Reference
-    private String bodyModelUrl;
-    private String bodyModelVersion;
+    // Care Information
+    private String carePlanId;
+    private List<Alert> activeAlerts;
+    private List<Provider> assignedProviders;
 
-    // Historical Data References
-    private int vitalsDataPoints;
-    private int labsDataPoints;
-    private LocalDateTime dataStartDate;
-    private LocalDateTime dataEndDate;
+    // Historical Data
+    private int twinDataCompleteness; // Percentage 0-100
+    private LocalDateTime lastUpdated;
+    private LocalDateTime createdAt;
+    private LocalDateTime lastVitalUpdate;
 
-    // Validation
-    private boolean validatedForPrediction;
-    private LocalDateTime validationDate;
-    private String validationErrors;
+    // Data Lineage
+    private String primaryDataSource; // WEARABLE, EHR, MANUAL
+    private List<String> integratedSources;
 
-    // Versioning
-    private int version;
-    private LocalDateTime modifiedAt;
-    private String modifiedBy;
+    // Audit & Compliance
+    private boolean hipaaCompliant;
+    private LocalDateTime lastAuditDate;
+    private String auditStatus;
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    public static class RiskHeatmap {
-        private double cardiovascularRisk;
-        private double diabetesRisk;
-        private double readmissionRisk;
-        private List<OrganRisk> organRisks;
+    public static class CurrentVitals {
+        private float heartRate;
+        private float systolicBP;
+        private float diastolicBP;
+        private float oxygenSaturation;
+        private float temperature;
+        private float bloodGlucose;
+        private LocalDateTime recordedAt;
+    }
 
-        @Data
-        @NoArgsConstructor
-        @AllArgsConstructor
-        public static class OrganRisk {
-            private String organ;
-            private double riskScore;
-            private String color; // red, yellow, green
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class LabResult {
+        private String testName;
+        private String value;
+        private String unit;
+        private String status;
+        private LocalDateTime testedAt;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class Alert {
+        private String alertId;
+        private String alertType;
+        private String severity;
+        private String message;
+        private LocalDateTime createdAt;
+        private boolean acknowledged;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class Provider {
+        private String providerId;
+        private String name;
+        private String specialty;
+        private String role;
+    }
+
+    public int calculateDataCompleteness() {
+        int completeness = 0;
+        int totalFields = 0;
+
+        if (currentVitals != null) {
+            completeness += 2;
         }
-    }
+        totalFields += 2;
 
-    public double getCompletenessPercentage() {
-        return completeness;
-    }
+        if (recentLabResults != null && !recentLabResults.isEmpty()) {
+            completeness += 2;
+        }
+        totalFields += 2;
 
-    public boolean isReadyForPrediction() {
-        return completeness >= 95.0 && validatedForPrediction;
+        if (activeConditions != null && !activeConditions.isEmpty()) {
+            completeness += 1;
+        }
+        totalFields += 1;
+
+        if (currentMedications != null && !currentMedications.isEmpty()) {
+            completeness += 1;
+        }
+        totalFields += 1;
+
+        return totalFields > 0 ? (completeness * 100) / totalFields : 0;
     }
 }

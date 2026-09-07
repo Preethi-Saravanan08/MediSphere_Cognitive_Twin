@@ -1,12 +1,9 @@
 package com.medisphere.controller;
 
 import com.medisphere.domain.HealthTwin;
-import com.medisphere.repository.HealthTwinRepository;
-import com.medisphere.service.HIPAAAuditService;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.medisphere.service.HealthTwinService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,181 +11,97 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
-@Slf4j
 @RestController
-@RequestMapping("/v1/twins")
-@CrossOrigin(origins = "*", maxAge = 3600)
+@RequestMapping("/v1/health-twins")
+@Slf4j
 public class HealthTwinController {
 
-    private final HealthTwinRepository healthTwinRepository;
-    private final HIPAAAuditService hipaaAuditService;
+    @Autowired
+    private HealthTwinService healthTwinService;
 
-    public HealthTwinController(
-            HealthTwinRepository healthTwinRepository,
-            HIPAAAuditService hipaaAuditService) {
-        this.healthTwinRepository = healthTwinRepository;
-        this.hipaaAuditService = hipaaAuditService;
+    @PostMapping("/patient/{patientId}")
+    public ResponseEntity<HealthTwin> createHealthTwin(@PathVariable String patientId) {
+        log.info("Creating health twin for patient: {}", patientId);
+        HealthTwin twin = healthTwinService.createHealthTwin(patientId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(twin);
     }
 
     @GetMapping("/patient/{patientId}")
-    public ResponseEntity<?> getTwinByPatientId(@PathVariable String patientId) {
-        try {
-            Optional<HealthTwin> twin = healthTwinRepository.findByPatientId(patientId);
-            
-            hipaaAuditService.logAccess("HEALTH_TWIN_ACCESSED", patientId, "Retrieved health twin");
-            
-            return twin.map(value -> ResponseEntity.ok(new ApiResponse(
-                    true,
-                    "Health twin retrieved successfully",
-                    value
-            ))).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ApiResponse(false, "Health twin not found", null)));
-        } catch (Exception e) {
-            log.error("Error retrieving health twin for patient: {}", patientId, e);
-            hipaaAuditService.logError("HEALTH_TWIN_ERROR", patientId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse(false, "Error retrieving health twin", null));
-        }
+    public ResponseEntity<HealthTwin> getHealthTwinByPatient(@PathVariable String patientId) {
+        log.debug("Fetching health twin for patient: {}", patientId);
+        Optional<HealthTwin> twin = healthTwinService.getHealthTwinByPatientId(patientId);
+        return twin.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/{twinId}")
-    public ResponseEntity<?> getTwinById(@PathVariable String twinId) {
-        try {
-            Optional<HealthTwin> twin = healthTwinRepository.findByTwinId(twinId);
-            
-            hipaaAuditService.logAccess("HEALTH_TWIN_ACCESSED", twinId, "Retrieved health twin by ID");
-            
-            return twin.map(value -> ResponseEntity.ok(new ApiResponse(
-                    true,
-                    "Health twin retrieved successfully",
-                    value
-            ))).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ApiResponse(false, "Health twin not found", null)));
-        } catch (Exception e) {
-            log.error("Error retrieving health twin: {}", twinId, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse(false, "Error retrieving health twin", null));
-        }
+    @PutMapping("/{twinId}")
+    public ResponseEntity<HealthTwin> updateHealthTwin(
+            @PathVariable String twinId,
+            @RequestBody HealthTwin twin) {
+        log.info("Updating health twin: {}", twinId);
+        twin.setId(twinId);
+        HealthTwin updatedTwin = healthTwinService.updateHealthTwin(twin);
+        return ResponseEntity.ok(updatedTwin);
     }
 
-    @GetMapping("/ready-for-prediction")
-    public ResponseEntity<?> getValidatedTwins() {
-        try {
-            List<HealthTwin> twins = healthTwinRepository.findValidatedForPrediction();
-            
-            hipaaAuditService.logAccess("VALIDATED_TWINS_LIST", "ALL", "Retrieved validated twins");
-            
-            return ResponseEntity.ok(new ApiResponse(
-                    true,
-                    "Validated twins retrieved successfully",
-                    twins
-            ));
-        } catch (Exception e) {
-            log.error("Error retrieving validated twins", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse(false, "Error retrieving twins", null));
-        }
+    @GetMapping("/list/high-risk")
+    public ResponseEntity<List<HealthTwin>> getHighRiskPatients() {
+        log.debug("Fetching high-risk patients");
+        List<HealthTwin> twins = healthTwinService.getHighRiskPatients();
+        return ResponseEntity.ok(twins);
     }
 
-    @GetMapping("/count/validated")
-    public ResponseEntity<?> getValidatedTwinCount() {
-        try {
-            long count = healthTwinRepository.countByValidatedForPrediction(true);
-            
-            hipaaAuditService.logAccess("VALIDATED_TWIN_COUNT", "ALL", "Retrieved validated twin count");
-            
-            return ResponseEntity.ok(new ApiResponse(
-                    true,
-                    "Validated twin count retrieved",
-                    count
-            ));
-        } catch (Exception e) {
-            log.error("Error getting validated twin count", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse(false, "Error retrieving count", null));
-        }
+    @GetMapping("/list/completeness/{minCompleteness}")
+    public ResponseEntity<List<HealthTwin>> getTwinsByCompleteness(@PathVariable int minCompleteness) {
+        log.debug("Fetching twins with minimum completeness: {}%", minCompleteness);
+        List<HealthTwin> twins = healthTwinService.getTwinsByCompleteness(minCompleteness);
+        return ResponseEntity.ok(twins);
     }
 
-    @GetMapping("/completeness/stats")
-    public ResponseEntity<?> getCompletenessStats() {
-        try {
-            long above95 = healthTwinRepository.countByCompletenessGreaterThanOrEqual(95.0);
-            long above80 = healthTwinRepository.countByCompletenessGreaterThanOrEqual(80.0);
-            long above60 = healthTwinRepository.countByCompletenessGreaterThanOrEqual(60.0);
-            long total = healthTwinRepository.count();
-            
-            hipaaAuditService.logAccess("TWIN_COMPLETENESS_STATS", "ALL", "Retrieved completeness stats");
-            
-            CompletenessStats stats = CompletenessStats.builder()
-                    .above95Percent(above95)
-                    .above80Percent(above80)
-                    .above60Percent(above60)
-                    .totalTwins(total)
-                    .build();
-            
-            return ResponseEntity.ok(new ApiResponse(
-                    true,
-                    "Completeness statistics retrieved",
-                    stats
-            ));
-        } catch (Exception e) {
-            log.error("Error getting completeness stats", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse(false, "Error retrieving stats", null));
-        }
+    @GetMapping("/list/alerts")
+    public ResponseEntity<List<HealthTwin>> getTwinsWithAlerts() {
+        log.debug("Fetching twins with active alerts");
+        List<HealthTwin> twins = healthTwinService.getTwinsWithActiveAlerts();
+        return ResponseEntity.ok(twins);
     }
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ApiResponse {
-        private boolean success;
-        private String message;
-        private Object data;
+    @PostMapping("/{twinId}/risk-score")
+    public ResponseEntity<Void> updateRiskScore(
+            @PathVariable String twinId,
+            @RequestParam String riskType,
+            @RequestParam float score) {
+        log.info("Updating risk score for twin {}: {} = {}", twinId, riskType, score);
+        healthTwinService.updateRiskScore(twinId, riskType, score);
+        return ResponseEntity.ok().build();
     }
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class CompletenessStats {
-        private long above95Percent;
-        private long above80Percent;
-        private long above60Percent;
-        private long totalTwins;
+    @PostMapping("/{twinId}/alert")
+    public ResponseEntity<Void> addAlert(
+            @PathVariable String twinId,
+            @RequestBody HealthTwin.Alert alert) {
+        log.info("Adding alert to twin {}: {}", twinId, alert.getMessage());
+        healthTwinService.addAlert(twinId, alert);
+        return ResponseEntity.ok().build();
+    }
 
-        public static CompletenessStatsBuilder builder() {
-            return new CompletenessStatsBuilder();
-        }
+    @GetMapping("/stats/high-risk-count")
+    public ResponseEntity<Long> countHighRiskPatients() {
+        log.debug("Counting high-risk patients");
+        long count = healthTwinService.countHighRiskPatients();
+        return ResponseEntity.ok(count);
+    }
 
-        public static class CompletenessStatsBuilder {
-            private long above95Percent;
-            private long above80Percent;
-            private long above60Percent;
-            private long totalTwins;
+    @GetMapping("/stats/total-count")
+    public ResponseEntity<Long> countTotalTwins() {
+        log.debug("Counting total health twins");
+        long count = healthTwinService.countTotalTwins();
+        return ResponseEntity.ok(count);
+    }
 
-            public CompletenessStatsBuilder above95Percent(long above95Percent) {
-                this.above95Percent = above95Percent;
-                return this;
-            }
-
-            public CompletenessStatsBuilder above80Percent(long above80Percent) {
-                this.above80Percent = above80Percent;
-                return this;
-            }
-
-            public CompletenessStatsBuilder above60Percent(long above60Percent) {
-                this.above60Percent = above60Percent;
-                return this;
-            }
-
-            public CompletenessStatsBuilder totalTwins(long totalTwins) {
-                this.totalTwins = totalTwins;
-                return this;
-            }
-
-            public CompletenessStats build() {
-                return new CompletenessStats(above95Percent, above80Percent, above60Percent, totalTwins);
-            }
-        }
+    @GetMapping("/list/all")
+    public ResponseEntity<List<HealthTwin>> getAllHealthTwins() {
+        log.debug("Fetching all health twins");
+        List<HealthTwin> twins = healthTwinService.getAllHealthTwins();
+        return ResponseEntity.ok(twins);
     }
 }

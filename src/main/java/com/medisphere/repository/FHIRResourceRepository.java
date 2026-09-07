@@ -18,34 +18,27 @@ public interface FHIRResourceRepository extends MongoRepository<FHIRResource, St
 
     List<FHIRResource> findByResourceType(String resourceType);
 
-    List<FHIRResource> findByEhrSystemId(String ehrSystemId);
-
-    @Query("{ 'syncStatus': ?0 }")
-    List<FHIRResource> findBySyncStatus(String syncStatus);
-
     @Query("{ 'syncStatus': 'FAILED' }")
     List<FHIRResource> findFailedSyncs();
 
     @Query("{ 'syncStatus': 'PENDING' }")
     List<FHIRResource> findPendingSyncs();
 
-    @Query("{ 'syncStatus': 'RETRY', 'retryCount': { $lt: 3 } }")
-    List<FHIRResource> findRetryableSyncs();
-
     @Query("{ 'validated': false }")
     List<FHIRResource> findUnvalidatedResources();
 
-    @Query("{ 'patientId': ?0, 'syncedAt': { $lt: ?1 } }")
-    List<FHIRResource> findNotSyncedSince(String patientId, LocalDateTime dateTime);
+    @Query("{ 'syncStatus': ?0, 'retryCount': { $lt: 5 } }")
+    List<FHIRResource> findRetryableResources(String syncStatus);
 
-    @Query("{ 'patientId': ?0, 'resourceType': ?1 }")
-    List<FHIRResource> findByPatientAndResourceType(String patientId, String resourceType);
+    List<FHIRResource> findByEhrSystemId(String ehrSystemId);
+
+    List<FHIRResource> findBySyncedAtAfter(LocalDateTime syncedAt);
+
+    List<FHIRResource> findByMappedToEntityType(String entityType);
 
     long countByResourceType(String resourceType);
 
     long countBySyncStatus(String syncStatus);
-
-    long countByPatientId(String patientId);
 
     long countByValidatedTrue();
 }
