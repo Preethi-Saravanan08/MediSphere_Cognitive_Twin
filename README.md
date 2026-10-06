@@ -11,7 +11,7 @@ MediSphere is an AI-powered healthcare platform that creates digital health twin
 - Real-time monitoring system with AI anomaly detection (89% AFib accuracy)
 - 12+ active clinical alerts
 
-## Quick Start (Running)
+## Quick Start 
 
 **All services are currently running:**
 
@@ -21,7 +21,7 @@ MediSphere is an AI-powered healthcare platform that creates digital health twin
 # MongoDB: localhost:27017/medisphere_cognitive_twin
 ```
 
-### Dashboard Metrics (Now Fixed ✅)
+### Dashboard Metrics 
 
 The dashboard overview now displays:
 - **Total Patients**: 10 (from MongoDB)
@@ -29,7 +29,7 @@ The dashboard overview now displays:
 - **FHIR Resources**: 20+ (lab results)
 - **Active Alerts**: 17 (real-time monitoring)
 
-### Vitals Stream (Now Fixed ✅)
+### Vitals Stream 
 
 The vitals page displays:
 - Real-time wearable vital signs (Heart Rate, BP, SpO2, Temp, RR)
@@ -105,14 +105,14 @@ medisphere/
 - Java 25 (for local backend dev)
 - Python 3.9+ (for AI service dev)
 
-### Option 1: Docker Compose (Recommended)
+### Option 1: Docker Compose 
 
 ```bash
 git clone <repository-url>
 cd medisphere
 ```
 
-### 2. Using Docker Compose (Recommended)
+### 2. Using Docker Compose 
 
 Start all services with a single command:
 
@@ -133,7 +133,7 @@ npm install
 npm start
 ```
 
-**Terminal 4: AI Service (Optional)**
+**Terminal 4: AI Service 
 ```bash
 cd ai-service
 python -m venv venv
