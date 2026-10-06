@@ -4,7 +4,7 @@
 
 MediSphere is an AI-powered healthcare platform that creates digital health twins for patients and predicts future health risks using continuous learning models.
 
-**Current Status:** ✅ **FULLY OPERATIONAL**
+**Current Status:** 
 - Backend (Spring Boot) running on port 8080
 - Frontend (Angular) running on port 4200
 - MongoDB connected with real patient data (10+ patients, 32+ vitals, 20+ lab results)
